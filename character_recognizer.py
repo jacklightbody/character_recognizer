@@ -61,8 +61,8 @@ def delta(eta, weight, target, inp, error_fn, derivative_fn):
     return eta * error_fn(target, weight * inp) * derivative_fn(weight * inp) * inp
 
 def learn(inputs, targets, iterations, hidden, eta):
-    weights0 = numpy.random.randn(len(inputs), hidden)
-    weights1 = numpy.random.randn(hidden, len(numpy.unique(targets)))
+    weights0 = numpy.random.randn(hidden, len(inputs))
+    weights1 = numpy.random.randn(len(numpy.unique(targets)), hidden)
     input_nodes = []
     hidden_nodes = []
     output_nodes = []
@@ -70,15 +70,15 @@ def learn(inputs, targets, iterations, hidden, eta):
     for inp in inputs[0]:
         input_nodes.append(Node(0))
     for hid in range(hidden):
-        hidden_nodes.append(Node(0, input_nodes, weights0))
-    for hid in range(len(numpy.unique(targets))):
-        output_nodes.append(Node(0, hidden_nodes, weights1))
+        hidden_nodes.append(Node(0, input_nodes, weights0[hid]))
+    for target in range(len(numpy.unique(targets))):
+        output_nodes.append(Node(0, hidden_nodes, weights1[target]))
 
     for i in range(iterations):
         for j in range(len(inputs)):
             ## propagate inputs all the way to the output layer
-            for k in range(len(input_nodes)):
-                input_nodes[k].activation = inputs[k]
+            for k in range(len(inputs[j])):
+                input_nodes[k].activation = inputs[j][k]
             for hidden in hidden_nodes:
                 hidden.activate()
             for output in output_nodes:
@@ -93,25 +93,28 @@ def learn(inputs, targets, iterations, hidden, eta):
                 sum_di = 0
                 for l in range(len(output_nodes)):
                     weight = output_nodes[l].weights[k]
-                    sum_di += weight * di(weight, targets[l], hidden[k].activation, dlogistic)
+                    sum_di += weight * di(weight, targets[l], hidden_nodes[k].activation, dlogistic)
                 for l in range(len(hidden_nodes[k].inputs)):
                     weight = hidden_nodes[k].weights[l]
-                    inp = hidden[k].inputs[l]
-                    dj = sum_di * dlogistic(inp)
-                    weight += eta * dj * inp
+                    inp = hidden_nodes[k].inputs[l]
+                    dj = sum_di * dlogistic(inp.activation)
+                    weight += eta * dj * inp.activation
             ## reset activation values
-            [0 for hidden.activation in hidden_nodes]
-            [0 for output.activation in output_nodes]
+            for hidden in hidden_nodes:
+                hidden.activation = 0
+            for output in output_nodes:
+                output.activation = 0
             
     return input_nodes, hidden_nodes, output_nodes
             
 def predict(inputs, input_nodes, hidden_nodes, output_nodes, hidden_fn, output_fn):
-    for i in range(len(input_nodes)):
-        input_nodes[i].activation = inputs[i]
-    for hidden in hidden_nodes:
-        hidden.activate()
-    for output in output_nodes:
-        output.activate()
+    for inputsChar in inputs:   
+        for i in range(len(input_nodes)):
+            input_nodes[i].activation = inputsChar.pixels[i]
+        for hidden in hidden_nodes:
+            hidden.activate()
+        for output in output_nodes:
+            output.activate()
         
         
     
