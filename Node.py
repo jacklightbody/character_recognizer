@@ -1,3 +1,5 @@
+import numpy
+
 class Node:
     inputs = []
     weights = []
