@@ -2,7 +2,7 @@
 ## Aidan Holloway-Bidwell and Jack Lightbody
 ## Computational Models of Cognition: Final Project
 
-import numpy
+import numpy 
 from Node import *
 from Character import *
 
@@ -29,11 +29,11 @@ def create_training_data(chars):
     return inp, out
 
 def get_confusion_matrix(output, desired):
-    matrix = np.zeros((26, 26)) # make the empty 10*10 matrix
+    matrix = numpy.zeros((26, 26)) # make the empty 10*10 matrix
     i = 0
     for item in output:
-        desired_val = np.argmax(desired[i])
-        real_val = np.argmax(item)
+        desired_val = numpy.argmax(desired[i])
+        real_val = numpy.argmax(item)
         matrix[desired_val][real_val]+=1 # fill as we go
         i+=1
     return matrix
@@ -63,8 +63,8 @@ def multinomial_output(lst):
     for item in lst:
         run_sum += numpy.exp(item.activation)
     for item in lst:
-        part_sum = run_sum - np.exp(item.activation)
-        results.append(np.exp(item.activation)/part_sum)
+        part_sum = run_sum - numpy.exp(item.activation)
+        results.append(numpy.exp(item.activation)/part_sum)
     return results
 
 def delta(eta, weight, target, inp, error_fn, derivative_fn):
@@ -83,9 +83,10 @@ def learn(inputs, targets, iterations, hidden, eta):
         hidden_nodes.append(Node(0, input_nodes, weights0[hid]))
     for target in range(len(numpy.unique(targets))):
         output_nodes.append(Node(0, hidden_nodes, weights1[target]))
-
     for i in range(iterations):
+        print len(inputs)
         for j in range(len(inputs)):
+            print j
             ## propagate inputs all the way to the output layer
             for k in range(len(inputs[j])):
                 input_nodes[k].activation = inputs[j][k]
@@ -120,9 +121,13 @@ def learn(inputs, targets, iterations, hidden, eta):
 def predictOutputs(inputs, input_nodes, hidden_nodes, output_nodes, output_fn):
     results = []
     for inputVal in inputs:
-        output_nodes = predict(inputVal, input_nodes, hidden_nodes, output_nodes, hidden_fn, output_fn)
-        results.append(output_nodes)
-    return output_fn(results)
+        output_nodes = predict(inputVal, input_nodes, hidden_nodes, output_nodes[:])
+        results.append(output_fn(output_nodes))
+        for hidden in hidden_nodes:
+            hidden.activation = 0
+        for output in output_nodes:
+            output.activation = 0
+    return results
 
 def predict(inputVal, input_nodes, hidden_nodes, output_nodes):
     for i in range(len(input_nodes)):
