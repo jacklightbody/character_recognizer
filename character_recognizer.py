@@ -28,6 +28,16 @@ def create_training_data(chars):
     out = create_output_matrix(out)
     return inp, out
 
+def get_confusion_matrix(output, desired):
+    matrix = np.zeros((26, 26)) # make the empty 10*10 matrix
+    i = 0
+    for item in output:
+        desired_val = np.argmax(desired[i])
+        real_val = np.argmax(item)
+        matrix[desired_val][real_val]+=1 # fill as we go
+        i+=1
+    return matrix
+
 def create_output_matrix(outputs):
     matrix = numpy.zeros((len(outputs), 26))
     for i in range(len(outputs)):
@@ -51,10 +61,10 @@ def multinomial_output(lst):
     run_sum = 0
     results = []
     for item in lst:
-        run_sum += numpy.exp(item)
+        run_sum += numpy.exp(item.activation)
     for item in lst:
-        part_sum = run_sum - np.exp(item)
-        results.append(np.exp(item)/part_sum)
+        part_sum = run_sum - np.exp(item.activation)
+        results.append(np.exp(item.activation)/part_sum)
     return results
 
 def delta(eta, weight, target, inp, error_fn, derivative_fn):
@@ -104,14 +114,22 @@ def learn(inputs, targets, iterations, hidden, eta):
             [0 for output.activation in output_nodes]
             
     return input_nodes, hidden_nodes, output_nodes
-            
-def predict(inputs, input_nodes, hidden_nodes, output_nodes, hidden_fn, output_fn):
+
+def predictOutputs(inputs, input_nodes, hidden_nodes, output_nodes, output_fn):
+    results = []
+    for inputVal in inputs:
+        output_nodes = predict(inputVal, input_nodes, hidden_nodes, output_nodes, hidden_fn, output_fn)
+        results.append(output_nodes)
+    return output_fn(results)
+
+def predict(inputVal, input_nodes, hidden_nodes, output_nodes):
     for i in range(len(input_nodes)):
-        input_nodes[i].activation = inputs[i]
+        input_nodes[i].activation = inputVal[i]
     for hidden in hidden_nodes:
         hidden.activate()
     for output in output_nodes:
         output.activate()
+    return output_nodes
         
         
     
