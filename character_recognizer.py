@@ -5,18 +5,20 @@ from __future__ import division
 import numpy 
 from Node import *
 import random
+import time
 def load_chars(filename):
     f = open(filename, 'r')
     chars = []
     matrix = [] 
     lists = []
     inp = []
+    nextlists = []
     for line in f:
         line = line.rstrip()
         data_list = line.split('\t')
         lists.append(data_list)
-    random.shuffle(lists)
-    for data_list in lists:
+#    random.shuffle(lists)
+#    for data_list in lists:
         pixels = list(map(int, data_list[6:]))
         pixels = compute_pixel_sums(pixels)
         inp.append(pixels)
@@ -25,14 +27,24 @@ def load_chars(filename):
         arr = numpy.zeros(26)
         arr[desired] = 1
         matrix.append(arr)
-    return inp, matrix
+    compute_next_prev(lists, matrix)
+    return inp, nextlists, matrix
+
+def compute_next_prv(lists, output_matrix)
+    prev = []
+    nexts = []
+    inps = []
+    for i in range(len(lists)):
+        inps.append(numpy.concatenate(prev, nexts)
+        del prev[0]
+        prev.append(output_matrix[i])
 
 def compute_pixel_sums(pixels):
     pixels = numpy.reshape(pixels, (16, 8))
     matrix = numpy.zeros((8, 8))
     for i in range(len(matrix)):
         for k in range(len(matrix[0])):
-            matrix[i][k] = (pixels[i][k]+pixels[i+1][k])/2
+            matrix[i][k] = (pixels[2*i][k]+pixels[(2*i)+1][k])/2
     return numpy.reshape(matrix, 64)
 
 ## Creates input and output list tuple from Character list
@@ -71,13 +83,15 @@ def logistic(x):
     return 1 / (1 + numpy.exp(-x))
 
 def dlogistic(x):
-    return (1 - x)
+    return x* (1 - x)
 
 def sum_squared_error(target, actual):
     return (target - actual) ** 2
+def dsum_squared_error(target, actual):
+    return (target - actual)
 
-def di(weight, target, inp, derivative_fn):
-    return (target - inp) * derivative_fn(inp)
+def di(weight, target, inp, error_fn, derivative_fn):
+    return error_fn(target, inp*weight) * derivative_fn(inp*weight) * weight
 
 def multinomial_output(lst):
     run_sum = 0
@@ -91,8 +105,10 @@ def multinomial_output(lst):
 
 def delta(eta, weight, target, inp, error_fn, derivative_fn):
     return eta * error_fn(target, weight * inp) * derivative_fn(weight * inp) * inp
+
 def tan(x):
     return (numpy.exp(x)-numpy.exp(-x))/(numpy.exp(x)+numpy.exp(-x))
+
 def dtan(x):
     return 1-((numpy.exp(x)-numpy.exp(-x))**2/(numpy.exp(x)+numpy.exp(-x))**2)
 
@@ -102,6 +118,9 @@ def learn(inputs, targets, iterations, hidden, eta):
     input_nodes = []
     hidden_nodes = []
     output_nodes = []
+    actTime = 0
+    hidback = 0
+    outback = 0
     for inp in inputs[0]:
         input_nodes.append(Node(0))
     for hid in range(hidden):
@@ -111,6 +130,7 @@ def learn(inputs, targets, iterations, hidden, eta):
     for i in range(iterations):
         print i
         for j in range(len(inputs)):
+            start_time = time.time()
             ## propagate inputs all the way to the output layer
             for k in range(len(inputs[j])):
                 input_nodes[k].activation = inputs[j][k]
@@ -118,26 +138,34 @@ def learn(inputs, targets, iterations, hidden, eta):
                 hidden.activate(tan)
             for output in output_nodes:
                 output.activate(tan)
+            actTime+=time.time()-start_time
             ## back-propagate and adjust weights
+            start_time = time.time()
             for k in range(len(output_nodes)):
                 for l in range(len(output_nodes[k].inputs)):
                     weight = output_nodes[k].weights[l]
                     inp = output_nodes[k].inputs[l].activation
-                    deltav = delta(eta, weight, targets[j][k], inp, sum_squared_error, dtan)
+                    deltav = delta(eta, weight, targets[j][k], inp, dsum_squared_error, dtan)
                     output_nodes[k].weights[l] += deltav
                 output_nodes[k].activation = 0
+            outback+=time.time()-start_time
+            start_time = time.time()
             for k in range(len(hidden_nodes)):
                 sum_di = 0
                 for l in range(len(output_nodes)):
                     weight = output_nodes[l].weights[k]
-                    sum_di += weight * di(weight, targets[j][l], hidden_nodes[k].activation, dtan)
+                    sum_di += weight * di(weight, targets[j][l], hidden_nodes[k].activation, dsum_squared_error, dtan)
                 for l in range(len(hidden_nodes[k].inputs)):
                     weight = hidden_nodes[k].weights[l]
                     inp = hidden_nodes[k].inputs[l]
-                    dj = sum_di * dtan(inp.activation)
+                    dj = sum_di * dtan(inp.activation*weight)
                     change = eta * dj * inp.activation
                     hidden_nodes[k].weights[l] += change
                 hidden_nodes[k].activation = 0  
+            hidback+=time.time()-start_time
+    print actTime
+    print hidback
+    print outback
     return input_nodes, hidden_nodes, output_nodes
 
 def predictOutputs(inputs, input_nodes, hidden_nodes, output_nodes, output_fn):
@@ -157,25 +185,3 @@ def predict(inputVal, input_nodes, hidden_nodes, output_nodes):
         output.activation = 0
         output.activate(tan)
     return output_nodes
-        
-        
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
