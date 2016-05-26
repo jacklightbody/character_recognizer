@@ -1,3 +1,4 @@
+from __future__ import division
 import numpy
 
 class Node:
@@ -7,6 +8,9 @@ class Node:
 
     def logistic(x):
         return 1 / (1 + numpy.exp(-x))
+        
+    def tan(x):
+        return (numpy.exp(x)-numpy.exp(-x))/(numpy.exp(x)+numpy.exp(-x))
     
     def activate(self, activation_fn = logistic):
         for i in range(len(self.inputs)):
