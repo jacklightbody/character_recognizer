@@ -2,14 +2,14 @@
 ## Aidan Holloway-Bidwell and Jack Lightbody
 ## Computational Models of Cognition: Final Project
 from __future__ import division
-import numpy 
+import numpy
 from Node import *
 import random
 import time
 def load_chars(filename):
     f = open(filename, 'r')
     chars = []
-    matrix = [] 
+    matrix = []
     lists = []
     inp = []
     nextlists = []
@@ -27,17 +27,17 @@ def load_chars(filename):
         arr = numpy.zeros(26)
         arr[desired] = 1
         matrix.append(arr)
-    compute_next_prev(lists, matrix)
-    return inp, nextlists, matrix
+    ##compute_next_prev(lists, matrix)
+    return inp, matrix
 
-def compute_next_prv(lists, output_matrix)
-    prev = []
-    nexts = []
-    inps = []
-    for i in range(len(lists)):
-        inps.append(numpy.concatenate(prev, nexts)
-        del prev[0]
-        prev.append(output_matrix[i])
+##def compute_next_prv(lists, output_matrix)
+##    prev = []
+##    nexts = []
+##    inps = []
+##    for i in range(len(lists)):
+##        inps.append(numpy.concatenate(prev, nexts)
+##        del prev[0]
+##        prev.append(output_matrix[i])
 
 def compute_pixel_sums(pixels):
     pixels = numpy.reshape(pixels, (16, 8))
@@ -91,7 +91,7 @@ def dsum_squared_error(target, actual):
     return (target - actual)
 
 def di(weight, target, inp, error_fn, derivative_fn):
-    return error_fn(target, inp*weight) * derivative_fn(inp*weight) * weight
+    return error_fn(target, inp*weight) * derivative_fn(inp*weight)
 
 def multinomial_output(lst):
     run_sum = 0
@@ -111,6 +111,20 @@ def tan(x):
 
 def dtan(x):
     return 1-((numpy.exp(x)-numpy.exp(-x))**2/(numpy.exp(x)+numpy.exp(-x))**2)
+
+def learn2(inputs, targets, iterations, hid, eta):
+    inputs = numpy.asarray(inputs).T
+
+    weights0 = numpy.random.randn(inputs.shape[0], hid)
+    weights1 = numpy.random.randn(26, hid)
+
+    for i in range(iterations):
+        for inp in inputs:
+            hidden = numpy.dot(weights0, inp.T)
+            print hidden
+
+    print(hidden)
+
 
 def learn(inputs, targets, iterations, hidden, eta):
     weights0 = numpy.random.randn(hidden, len(inputs[0]))
@@ -161,7 +175,7 @@ def learn(inputs, targets, iterations, hidden, eta):
                     dj = sum_di * dtan(inp.activation*weight)
                     change = eta * dj * inp.activation
                     hidden_nodes[k].weights[l] += change
-                hidden_nodes[k].activation = 0  
+                hidden_nodes[k].activation = 0
             hidback+=time.time()-start_time
     print actTime
     print hidback
