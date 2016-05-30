@@ -9,7 +9,7 @@ import time
 def load_chars(filename):
     f = open(filename, 'r')
     chars = []
-    matrix = []
+    matrix = [] 
     lists = []
     inp = []
     nextlists = []
@@ -27,17 +27,72 @@ def load_chars(filename):
         arr = numpy.zeros(26)
         arr[desired] = 1
         matrix.append(arr)
-    ##compute_next_prev(lists, matrix)
-    return inp, matrix
+    return inp, lists, matrix
 
-##def compute_next_prv(lists, output_matrix)
-##    prev = []
-##    nexts = []
-##    inps = []
-##    for i in range(len(lists)):
-##        inps.append(numpy.concatenate(prev, nexts)
-##        del prev[0]
-##        prev.append(output_matrix[i])
+def compute_next_prev(lists, output_matrix):
+    zero = numpy.zeros(26)
+    prevs = [zero, zero]
+    nexts = [output_matrix[1], output_matrix[2]]
+    endincontext = False
+    endindex = 4
+    inps = []
+    for i in range(len(lists)):
+        inps.append(numpy.ravel(numpy.asarray(prevs + nexts)))
+        del prevs[0]
+        if len(nexts) >0:
+            del nexts[0]
+        if not endincontext:
+            if i >= len(output_matrix):
+                return inps
+            prevs.append(output_matrix[i])
+            if len(output_matrix) > i+3:
+                if lists[i+3][2] == -1:
+                    endincontext = True
+                    endindex = 3
+                nexts.append(output_matrix[i+3])
+        else:
+            if endindex > 2:
+                endindex -= 1
+            else:
+                prevs = []
+                nexts = []
+                if len(lists) > i+3:
+                    prevs = [zero, zero]
+                    nexts = [output_matrix[i+2], output_matrix[i+3]]
+                    endincontext = False
+                else:
+                    prevs = [zero, zero]
+                    nexts = [zero, zero]
+                    endincontext = False
+
+    return inps
+
+def compute_context(lists, output_matrix):
+    zero = numpy.zeros(26)
+    context = [zero, zero, output_matrix[0], output_matrix[1], output_matrix[2]]
+    endincontext = False
+    endindex = 4
+    inps = []
+    for i in range(len(lists)):
+        inps.append(numpy.ravel(numpy.asarray(context)))
+        if len(context) == 5:
+            del context[0]
+        if not endincontext:
+            if len(lists) > i+3:
+                if lists[i+3][2] == -1:
+                    endincontext = True
+                    endindex = 3
+                context.append(output_matrix[i+3])
+        else:
+            if endindex > 1:
+                endindex -= 1
+            else:
+                prevs = []
+                nexts = []
+                if len(lists) > i+3:
+                    context = [zero, zero, output_matrix[i+1], output_matrix[i+2], output_matrix[i+3]]
+                    endincontext = False
+    return inps
 
 def compute_pixel_sums(pixels):
     pixels = numpy.reshape(pixels, (16, 8))
