@@ -92,6 +92,8 @@ def compute_context(lists, output_matrix):
                 if len(lists) > i+3:
                     context = [zero, zero, output_matrix[i+1], output_matrix[i+2], output_matrix[i+3]]
                     endincontext = False
+                else:
+                    context = [zero, zero, zero, zero, zero]
     return inps
 
 def compute_pixel_sums(pixels):
@@ -180,26 +182,24 @@ def learn2(inputs, targets, iterations, hid, eta):
 
     print(hidden)
 
-
-def learn(inputs, targets, iterations, hidden, eta):
+def learnInit(inputs, targets, iterations, hidden, eta):
     weights0 = numpy.random.randn(hidden, len(inputs[0]))
     weights1 = numpy.random.randn(26, hidden)
     input_nodes = []
     hidden_nodes = []
     output_nodes = []
-    actTime = 0
-    hidback = 0
-    outback = 0
     for inp in inputs[0]:
         input_nodes.append(Node(0))
     for hid in range(hidden):
         hidden_nodes.append(Node(0, input_nodes, weights0[hid]))
     for target in range(26):
         output_nodes.append(Node(0, hidden_nodes, weights1[target]))
+    return learn(input_nodes, hidden_nodes, output_nodes, inputs, targets, iterations, hidden, eta)
+
+def learn(input_nodes, hidden_nodes, output_nodes, inputs, targets, iterations, hidden, eta):
     for i in range(iterations):
         print i
         for j in range(len(inputs)):
-            start_time = time.time()
             ## propagate inputs all the way to the output layer
             for k in range(len(inputs[j])):
                 input_nodes[k].activation = inputs[j][k]
@@ -207,18 +207,14 @@ def learn(inputs, targets, iterations, hidden, eta):
                 hidden.activate(tan)
             for output in output_nodes:
                 output.activate(tan)
-            actTime+=time.time()-start_time
             ## back-propagate and adjust weights
-            start_time = time.time()
             for k in range(len(output_nodes)):
                 for l in range(len(output_nodes[k].inputs)):
                     weight = output_nodes[k].weights[l]
                     inp = output_nodes[k].inputs[l].activation
-                    deltav = delta(eta, weight, targets[j][k], inp, dsum_squared_error, dtan)
+                    deltav = delta(eta, weight, targets[j][k], inp, sum_squared_error, dtan)
                     output_nodes[k].weights[l] += deltav
                 output_nodes[k].activation = 0
-            outback+=time.time()-start_time
-            start_time = time.time()
             for k in range(len(hidden_nodes)):
                 sum_di = 0
                 for l in range(len(output_nodes)):
@@ -231,10 +227,6 @@ def learn(inputs, targets, iterations, hidden, eta):
                     change = eta * dj * inp.activation
                     hidden_nodes[k].weights[l] += change
                 hidden_nodes[k].activation = 0
-            hidback+=time.time()-start_time
-    print actTime
-    print hidback
-    print outback
     return input_nodes, hidden_nodes, output_nodes
 
 def predictOutputs(inputs, input_nodes, hidden_nodes, output_nodes, output_fn):
@@ -246,7 +238,10 @@ def predictOutputs(inputs, input_nodes, hidden_nodes, output_nodes, output_fn):
 
 def predict(inputVal, input_nodes, hidden_nodes, output_nodes):
     for i in range(len(input_nodes)):
-        input_nodes[i].activation = inputVal[i]
+        if len(inputVal)> i:
+            input_nodes[i].activation = inputVal[i]
+        else:
+            input_nodes[i].activation = 0
     for hidden in hidden_nodes:
         hidden.activation = 0
         hidden.activate(tan)
