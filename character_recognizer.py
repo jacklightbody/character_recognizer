@@ -112,18 +112,28 @@ def tan(x):
 def dtan(x):
     return 1-((numpy.exp(x)-numpy.exp(-x))**2/(numpy.exp(x)+numpy.exp(-x))**2)
 
-def learn2(inputs, targets, iterations, hid, eta):
-    inputs = numpy.asarray(inputs).T
+def learn2(inputs, targets, iterations, hid, eta, activ_fn=logistic, dactiv_fn=dlogistic, error_fn=dsum_squared_error):
+    inputs = numpy.asarray(inputs)
+    print "input shape: " + str(inputs.shape)
+    targets = numpy.asarray(targets)
 
-    weights0 = numpy.random.randn(inputs.shape[0], hid)
-    weights1 = numpy.random.randn(26, hid)
+    weights0 = numpy.random.randn(hid, inputs.shape[1])
+    weights1 = numpy.random.randn(targets.shape[1], hid)
 
     for i in range(iterations):
-        for inp in inputs:
-            hidden = numpy.dot(weights0, inp.T)
-            print hidden
+        for inp in range(inputs.shape[0]):
+            ## propagate through to output layer
+            print "input layer shape: " + str(inputs[[inp],:].shape)
+            h_inp = numpy.dot(weights0, inputs[[inp],:])
+            hidden = activ_fn(h_inp)
+            o_inp = numpy.dot(weights1, hidden)
+            outputs = activ_fn(o_inp)
 
-    print(hidden)
+            ## adjust weights for hidden layer to output layer
+            di = error_fn(targets[[inp],:], outputs) * dactiv_fn(o_inp)
+            print "di shape = " + str(di.shape) + " and hidden shape = " + str(hidden.shape)
+            dw1 = eta * numpy.dot(di, hidden)
+            print(dw1.shape)
 
 
 def learn(inputs, targets, iterations, hidden, eta):
